@@ -34,6 +34,24 @@ message onto `warnings` rather than dropping it silently. Add a matching test in
 - Don't add runtime dependencies.
 - Update the README if you change user-facing behavior.
 
+## Releasing
+
+Releases are automated. Pushing a `v*` tag runs the test suite and publishes to npm
+via `.github/workflows/release.yml`.
+
+One-time setup: create an npm **automation** token (Account → Access Tokens →
+Generate → Automation; this type bypasses 2FA) and add it as a repo secret named
+`NPM_TOKEN` (Settings → Secrets and variables → Actions).
+
+To cut a release:
+
+```bash
+npm version patch     # or minor / major — bumps package.json and tags
+git push --follow-tags
+```
+
+The workflow checks that the tag matches `package.json` before publishing.
+
 ## Reporting bugs
 
 Open an issue with the input you gave, the format you converted from/to, and what

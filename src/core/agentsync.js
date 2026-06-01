@@ -45,6 +45,21 @@ export const FORMATS = {
     label: '.windsurfrules (Windsurf)',
     filename: '.windsurfrules',
   },
+  cline: {
+    id: 'cline',
+    label: '.clinerules (Cline)',
+    filename: '.clinerules',
+  },
+  aider: {
+    id: 'aider',
+    label: 'CONVENTIONS.md (Aider)',
+    filename: 'CONVENTIONS.md',
+  },
+  gemini: {
+    id: 'gemini',
+    label: 'GEMINI.md (Gemini CLI)',
+    filename: 'GEMINI.md',
+  },
 };
 
 /** Guess the source format from a filename and/or its contents. */
@@ -55,6 +70,9 @@ export function detectFormat(filenameOrContent = '', content = '') {
   if (name.includes('copilot-instructions')) return 'copilot';
   if (name.includes('.cursorrules') || name.includes('.cursor/rules')) return 'cursor';
   if (name.includes('.windsurfrules')) return 'windsurf';
+  if (name.includes('.clinerules')) return 'cline';
+  if (name.endsWith('conventions.md')) return 'aider';
+  if (name.endsWith('gemini.md')) return 'gemini';
 
   // Fall back to sniffing the body.
   const body = (content || filenameOrContent).toLowerCase();
@@ -110,6 +128,45 @@ function splitSections(body) {
   };
 }
 
+// Heuristic classification of a single line into a semantic bucket.
+function classifyLine(line) {
+  const lower = line.toLowerCase();
+  if (/\b(do not|don't|never|avoid|must not|forbidden)\b/.test(lower)) return 'donts';
+  if (/`[^`]+`/.test(line) && /\b(run|install|build|test|dev|start|lint|server|deps|format|compile|migrate)\b/.test(lower)) return 'commands';
+  return null; // null = stay in the current mode
+}
+
+// A "Heading:" label line switches the active bucket.
+function labelToMode(line) {
+  const m = line.match(/^([A-Za-z][\w \/&-]*):\s*$/);
+  if (!m) return null;
+  const l = m[1].toLowerCase();
+  if (/convention|style|guideline|format/.test(l)) return 'style';
+  if (/command|setup|build|test|script|getting started/.test(l)) return 'commands';
+  if (/do ?not|don't|avoid|never|forbidden/.test(l)) return 'donts';
+  if (/overview|about|context|introduction/.test(l)) return 'overview';
+  return null;
+}
+
+// Turn an unstructured rule file into semantic sections instead of one blob.
+function parsePlainText(body) {
+  const buckets = { overview: [], commands: [], style: [], donts: [] };
+  let mode = 'overview';
+  for (const raw of body.split('\n')) {
+    const line = raw.trimEnd();
+    if (!line.trim()) continue;
+    const labelMode = labelToMode(line.trim());
+    if (labelMode) { mode = labelMode; continue; }
+    const forced = classifyLine(line);
+    buckets[forced || mode].push(line);
+  }
+  const sections = [];
+  if (buckets.commands.length) sections.push({ heading: 'Build & test commands', body: buckets.commands.join('\n') });
+  if (buckets.style.length) sections.push({ heading: 'Code style & conventions', body: buckets.style.join('\n') });
+  if (buckets.donts.length) sections.push({ heading: 'Do not', body: buckets.donts.join('\n') });
+  return { intro: buckets.overview.join('\n').trim(), sections };
+}
+
 /**
  * @param {string} text
  * @param {string} format
@@ -136,9 +193,16 @@ export function parse(text, format) {
   let { intro, sections } = splitSections(body);
 
   // Plain-text rule files (classic .cursorrules) often have no headings.
-  if (sections.length === 0 && intro) {
-    sections = [{ heading: 'Project rules', body: intro }];
-    intro = '';
+  // Classify the prose into semantic sections instead of one opaque blob.
+  if (sections.length === 0 && intro.trim()) {
+    const p = parsePlainText(intro);
+    if (p.sections.length) {
+      intro = p.intro;
+      sections = p.sections;
+    } else {
+      sections = [{ heading: 'Project rules', body: intro }];
+      intro = '';
+    }
   }
 
   const firstHeadingTitle = (text.match(/^#\s+(.*)$/m) || [])[1];
@@ -204,12 +268,25 @@ function collapse(parts) {
   return parts.filter(Boolean).join('\n\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
 }
 
+// Most tools just read a titled markdown doc; one factory covers them.
+function renderTitled(defaultTitle) {
+  return (ir) => {
+    const parts = [`# ${ir.title || defaultTitle}`];
+    if (ir.intro) parts.push(ir.intro);
+    parts.push(renderSections(ir));
+    return collapse(parts);
+  };
+}
+
 const RENDERERS = {
   agents: renderAgents,
   claude: renderClaude,
   copilot: renderCopilot,
   cursor: renderCursor,
   windsurf: renderCursor, // Windsurf uses the same plain-markdown shape
+  cline: renderTitled('Cline rules'),
+  aider: renderTitled('Coding conventions'),
+  gemini: renderTitled('GEMINI.md'),
 };
 
 export function render(ir, to) {

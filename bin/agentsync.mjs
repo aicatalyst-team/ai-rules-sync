@@ -21,11 +21,13 @@ const HELP = `agentsync — one source of truth for your AI coding-agent rules
 
 Usage:
   agentsync init [dir] [-o <out>] [--force]    scan a repo and write AGENTS.md
-  agentsync convert <file> [--to agents|claude|cursor|copilot|windsurf] [--from <fmt>] [-o <out>]
+  agentsync convert <file> [--to agents|claude|cursor|copilot|windsurf|cline|aider|gemini] [--from <fmt>] [-o <out>]
   agentsync generate --name <n> [--language ts] [--framework next] [--test "npm test"] ... [-o <out>]
   agentsync lint <file>                         check an AGENTS.md for staleness
   agentsync detect <file>
   agentsync formats
+
+  convert / detect / lint accept --json for machine-readable output.
 
 Examples:
   agentsync init                                # scans the current repo
@@ -67,6 +69,10 @@ try {
       const from = flag('from') || detectFormat(basename(file), text);
       const to = flag('to') || 'agents';
       const res = convert(text, { from, to });
+      if (has('json')) {
+        process.stdout.write(JSON.stringify({ from, to, warnings: res.warnings, output: res.output }, null, 2) + '\n');
+        break;
+      }
       res.warnings.forEach((w) => process.stderr.write(`⚠ ${w}\n`));
       process.stderr.write(`→ ${from} → ${to}\n`);
       out(res.output, flag('o', 'o'));
@@ -93,13 +99,17 @@ try {
       const file = args[1];
       if (!file || !existsSync(file)) throw new Error(`file not found: ${file}`);
       const { findings } = lintFile(file);
-      const icon = { error: '✗', warn: '⚠', info: 'ℹ' };
-      for (const f of findings) process.stderr.write(`${icon[f.level]} ${f.message}\n`);
       const errors = findings.filter((f) => f.level === 'error').length;
       const warns = findings.filter((f) => f.level === 'warn').length;
+      const failed = errors > 0 || (has('strict') && warns > 0);
+      if (has('json')) {
+        process.stdout.write(JSON.stringify({ file, errors, warnings: warns, findings, ok: !failed }, null, 2) + '\n');
+        process.exit(failed ? 1 : 0);
+      }
+      const icon = { error: '✗', warn: '⚠', info: 'ℹ' };
+      for (const f of findings) process.stderr.write(`${icon[f.level]} ${f.message}\n`);
       if (!findings.length) process.stdout.write(`✓ ${file} looks good\n`);
       else process.stderr.write(`\n${errors} error(s), ${warns} warning(s)\n`);
-      const failed = errors > 0 || (has('strict') && warns > 0);
       process.exit(failed ? 1 : 0);
     }
     case 'detect': {
@@ -107,6 +117,10 @@ try {
       if (!file || !existsSync(file)) throw new Error(`file not found: ${file}`);
       const text = readFileSync(file, 'utf8');
       const fmt = detectFormat(basename(file), text);
+      if (has('json')) {
+        process.stdout.write(JSON.stringify({ format: fmt, label: FORMATS[fmt].label }) + '\n');
+        break;
+      }
       process.stdout.write(`${fmt} — ${FORMATS[fmt].label}\n`);
       break;
     }

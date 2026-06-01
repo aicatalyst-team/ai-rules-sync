@@ -1,5 +1,7 @@
 # agentsync
 
+[![npm version](https://img.shields.io/npm/v/@panishandsome/agentsync)](https://www.npmjs.com/package/@panishandsome/agentsync)
+[![npm downloads](https://img.shields.io/npm/dm/@panishandsome/agentsync)](https://www.npmjs.com/package/@panishandsome/agentsync)
 [![CI](https://github.com/PanisHandsome/ai-rules-sync/actions/workflows/ci.yml/badge.svg)](https://github.com/PanisHandsome/ai-rules-sync/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](package.json)
@@ -52,12 +54,15 @@ agentsync lint AGENTS.md
 
 ## Try it in the browser
 
+**→ https://panishandsome.github.io/ai-rules-sync/** — paste any rule file on the
+left, see the converted output on the right, or switch to **Generate** mode and
+fill in a short form. Runs entirely client-side; nothing is uploaded.
+
+To run the playground locally:
+
 ```bash
 npm run web      # → http://localhost:5173
 ```
-
-A live playground: paste any rule file on the left, see the converted output on
-the right, or switch to **Generate** mode and fill in a short form.
 
 ## Supported formats
 
@@ -68,8 +73,11 @@ the right, or switch to **Generate** mode and fill in a short form.
 | `cursor`  | `.cursorrules`                        | Cursor        |
 | `copilot` | `.github/copilot-instructions.md`     | GitHub Copilot|
 | `windsurf`| `.windsurfrules`                      | Windsurf      |
+| `cline`   | `.clinerules`                         | Cline         |
+| `aider`   | `CONVENTIONS.md`                      | Aider         |
+| `gemini`  | `GEMINI.md`                           | Gemini CLI    |
 
-Run `npx agentsync formats` to list them.
+Run `agentsync formats` to list them.
 
 ## How it works
 
@@ -79,12 +87,18 @@ tool means writing one parser and one renderer — nothing else changes. Tool-sp
 constructs that don't translate (Cursor's `globs` frontmatter, Claude's `@path`
 imports) surface as **warnings** instead of being silently dropped.
 
+Flat, heading-less rule files are classified semantically: command lines, style
+notes, and prohibitions are sorted into proper `Build & test commands`, `Code style`
+and `Do not` sections rather than dumped into one blob.
+
 ## CLI reference
 
 ```
-agentsync convert <file> [--to <fmt>] [--from <fmt>] [-o <out>]
+agentsync init [dir] [-o <out>] [--force]
+agentsync convert <file> [--to <fmt>] [--from <fmt>] [-o <out>] [--json]
 agentsync generate --name <n> [--language ..] [--framework ..] [--test ..] [-o <out>]
-agentsync detect <file>
+agentsync lint <file> [--strict] [--json]
+agentsync detect <file> [--json]
 agentsync formats
 ```
 

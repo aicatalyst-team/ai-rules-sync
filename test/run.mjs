@@ -4,6 +4,7 @@ import { scanRepo } from '../src/node/scan.js';
 import { lint } from '../src/node/lint.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -39,6 +40,15 @@ ok('generate has title', g.output.includes('# demo'));
 ok('generate includes test cmd', g.output.includes('go test ./...'));
 ok('generate has PR checklist', g.output.includes('Before opening a PR'));
 
+// new formats
+ok('detect .clinerules', detectFormat('.clinerules', '') === 'cline');
+ok('detect CONVENTIONS.md', detectFormat('CONVENTIONS.md', '') === 'aider');
+ok('detect GEMINI.md', detectFormat('GEMINI.md', '') === 'gemini');
+const toGemini = convert('# CLAUDE.md\n\n## Setup\n\nRun `npm test`.', { from: 'claude', to: 'gemini' });
+ok('claude→gemini keeps command', toGemini.output.includes('npm test'));
+const toCline = convert('Use strict types.\n\n- Run `pytest`.', { from: 'cursor', to: 'cline' });
+ok('cursor→cline renders title', toCline.output.startsWith('# Cline rules'));
+
 // scan: Node + TS + Next.js + pnpm
 const next = scanRepo(join(here, 'fixtures', 'node-next'));
 ok('scan detects TypeScript', next.spec.language === 'TypeScript');
@@ -53,6 +63,37 @@ ok('scan detects Python', py.spec.language === 'Python');
 ok('scan detects FastAPI', py.spec.framework === 'FastAPI');
 ok('scan detects uv', py.spec.packageManager === 'uv');
 ok('scan uses uv run pytest', py.spec.test === 'uv run pytest');
+
+// semantic parsing: a flat .cursorrules becomes classified sections
+const flat = readFileSync(join(here, '..', 'examples', '.cursorrules'), 'utf8');
+const semantic = convert(flat, { from: 'cursor', to: 'agents' }).output;
+ok('semantic: extracts a commands section', semantic.includes('## Build & test commands'));
+ok('semantic: extracts a code style section', semantic.includes('## Code style & conventions'));
+ok('semantic: extracts a Do not section', semantic.includes('## Do not'));
+ok('semantic: routes a command line into commands', /## Build & test commands[\s\S]*uv sync/.test(semantic));
+ok('semantic: routes a prohibition into Do not', /## Do not[\s\S]*migrations/.test(semantic));
+
+// round-trip fidelity: A -> B -> A keeps headings, commands, and bullets
+const original = `# AGENTS.md
+
+A short intro about the project.
+
+## Build & test commands
+
+- Test: \`npm test\`
+- Build: \`npm run build\`
+
+## Code style
+
+- Use strict types.
+- No \`any\`.`;
+for (const via of ['claude', 'copilot', 'cursor', 'gemini', 'cline']) {
+  const there = convert(original, { from: 'agents', to: via }).output;
+  const back = convert(there, { from: via, to: 'agents' }).output;
+  ok(`round-trip via ${via} keeps test command`, back.includes('npm test'));
+  ok(`round-trip via ${via} keeps Code style heading`, back.includes('Code style'));
+  ok(`round-trip via ${via} keeps bullet text`, back.includes('Use strict types'));
+}
 
 // lint
 const goodDoc = '# AGENTS.md\n\n## Build\n\n- Test: `npm test`\n';
