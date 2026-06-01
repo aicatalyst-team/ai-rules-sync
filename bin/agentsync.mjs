@@ -6,7 +6,7 @@ import { watch } from 'node:fs';
 import { convert, merge, generate, detectFormat, FORMATS } from '../src/core/agentsync.js';
 import { scanRepo } from '../src/node/scan.js';
 import { lintFile } from '../src/node/lint.js';
-import { sync, syncAuto, loadConfig, configFiles } from '../src/node/sync.js';
+import { sync, syncAuto, initConfig, loadConfig, configFiles } from '../src/node/sync.js';
 
 const args = process.argv.slice(2);
 const cmd = args[0];
@@ -23,6 +23,7 @@ const HELP = `agentsync — one source of truth for your AI coding-agent rules
 
 Usage:
   agentsync init [dir] [-o <out>] [--force]    scan a repo and write AGENTS.md
+  agentsync sync --init                         create an agentsync.json (auto-detects existing files)
   agentsync sync [--check] [--watch]            regenerate targets from the source in agentsync.json
   agentsync sync --auto [--source <file>]       edit ANY file; the changed one wins, others follow
   agentsync convert <file> [--to agents|claude|cursor|copilot|windsurf|cline|aider|gemini] [--from <fmt>] [-o <out>]
@@ -101,6 +102,17 @@ try {
       break;
     }
     case 'sync': {
+      if (has('init')) {
+        try {
+          const cfg = initConfig('.');
+          process.stderr.write(`✓ wrote agentsync.json\n  source:  ${cfg.source}\n  targets: ${cfg.targets.join(', ')}\n`);
+          process.stderr.write(`\nEdit it if needed, then run \`agentsync sync\`.\n`);
+        } catch (e) {
+          if (e.code === 'EXISTS') { process.stderr.write(`agentsync.json already exists.\n`); process.exit(1); }
+          throw e;
+        }
+        break;
+      }
       const auto = has('auto');
       const runOnce = () => {
         let res;

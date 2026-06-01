@@ -56,8 +56,12 @@ agentsync lint AGENTS.md
 
 ## Keep one source of truth, sync the rest
 
-Write `AGENTS.md` once and let the other tools' files be generated from it. Add an
-`agentsync.json`:
+Write `AGENTS.md` once and let the other tools' files be generated from it. Create
+the config (it auto-detects which rule files you already have):
+
+```bash
+agentsync sync --init      # writes agentsync.json
+```
 
 ```json
 {

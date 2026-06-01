@@ -2,7 +2,7 @@
 import { convert, merge, generate, detectFormat } from '../src/core/agentsync.js';
 import { scanRepo } from '../src/node/scan.js';
 import { lint } from '../src/node/lint.js';
-import { sync, syncAuto } from '../src/node/sync.js';
+import { sync, syncAuto, initConfig } from '../src/node/sync.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -85,6 +85,16 @@ const mg = merge([{ text: a, from: 'agents' }, { text: b, from: 'cursor' }], { t
 ok('merge keeps first file content', mg.includes('npm test'));
 ok('merge folds same heading (Build)', mg.includes('eslint .') && (mg.match(/## Build/g) || []).length === 1);
 ok('merge keeps distinct section (Style)', mg.includes('## Style'));
+
+// sync --init: scaffolds config from existing files, refuses to clobber
+const cfgDir = mkdtempSync(join(tmpdir(), 'agentsync-cfg-'));
+writeFileSync(join(cfgDir, 'CLAUDE.md'), '# CLAUDE.md\n');
+const initCfg = initConfig(cfgDir);
+ok('initConfig sets AGENTS.md as source', initCfg.source === 'AGENTS.md');
+ok('initConfig detects existing CLAUDE.md', initCfg.targets.includes('CLAUDE.md'));
+let cfgGuard = false;
+try { initConfig(cfgDir); } catch (e) { cfgGuard = e.code === 'EXISTS'; }
+ok('initConfig refuses to overwrite', cfgGuard);
 
 // sync: dry run reports missing targets as changed
 const sres = sync({ dir: join(here, 'fixtures', 'sync'), write: false });

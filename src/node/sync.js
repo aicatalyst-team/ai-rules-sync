@@ -21,6 +21,29 @@ export const EXAMPLE_CONFIG = {
   targets: ['CLAUDE.md', '.cursorrules', '.github/copilot-instructions.md'],
 };
 
+// Target files we know how to generate, in a sensible default order.
+const KNOWN_TARGETS = [
+  'CLAUDE.md', '.cursorrules', '.github/copilot-instructions.md',
+  '.windsurfrules', '.clinerules', 'CONVENTIONS.md', 'GEMINI.md',
+];
+
+/**
+ * Scaffold an agentsync.json. Targets default to whichever known rule files
+ * already exist in the repo; if none do, a sensible starter set is used.
+ */
+export function initConfig(dir = '.') {
+  const path = join(dir, CONFIG_NAME);
+  if (existsSync(path)) {
+    const err = new Error(`${CONFIG_NAME} already exists`);
+    err.code = 'EXISTS';
+    throw err;
+  }
+  const present = KNOWN_TARGETS.filter((f) => existsSync(join(dir, f)));
+  const cfg = { source: 'AGENTS.md', targets: present.length ? present : ['CLAUDE.md', '.cursorrules'] };
+  writeFileSync(path, JSON.stringify(cfg, null, 2) + '\n');
+  return cfg;
+}
+
 export function loadConfig(dir = '.') {
   const path = join(dir, CONFIG_NAME);
   if (!existsSync(path)) {
