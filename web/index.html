@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>agentsync — keep one AI rules file, not five</title>
+  <meta name="description" content="Convert between AGENTS.md, CLAUDE.md, .cursorrules and Copilot instructions, or scaffold a new AGENTS.md." />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="site">
+    <div class="wrap">
+      <a class="brand" href="#top">agent<span>sync</span></a>
+      <nav>
+        <a href="#playground">Playground</a>
+        <a href="#how">How it works</a>
+        <a class="gh" href="https://github.com/PanisHandsome/ai-rules-sync" target="_blank" rel="noopener">Star on GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="glow" aria-hidden="true"></div>
+      <div class="wrap">
+        <p class="eyebrow">AGENTS.md · CLAUDE.md · .cursorrules · Copilot</p>
+        <h1>Your AI tools each want<br />their own rules file.</h1>
+        <p class="sub">
+          Cursor reads <code>.cursorrules</code>. Claude reads <code>CLAUDE.md</code>. Codex and
+          Copilot want something else again. Write the rules once, convert to whatever the others
+          expect, and scaffold a fresh <code>AGENTS.md</code> if you don't have one yet.
+        </p>
+
+        <div class="terminal" role="img" aria-label="terminal command">
+          <div class="bar"><span></span><span></span><span></span></div>
+          <div class="line">
+            <span class="prompt">$</span>
+            <code id="installCmd">npx agentsync convert .cursorrules --to agents</code>
+            <button id="copyInstall" class="copy-cmd" title="Copy">copy</button>
+          </div>
+        </div>
+
+        <div class="chips" id="formatChips"></div>
+      </div>
+    </section>
+
+    <section id="playground" class="playground">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Try it</h2>
+          <p>Runs entirely in your browser. Nothing leaves the page.</p>
+        </div>
+
+        <div class="card">
+          <div class="tabs">
+            <button class="tab active" data-mode="convert">Convert a file</button>
+            <button class="tab" data-mode="generate">Start from scratch</button>
+          </div>
+
+          <!-- Convert -->
+          <div class="panel" data-panel="convert">
+            <div class="controls">
+              <label>From
+                <select id="fromFmt"><option value="auto">Auto-detect</option></select>
+              </label>
+              <span class="arrow">→</span>
+              <label>To
+                <select id="toFmt"></select>
+              </label>
+              <button id="loadExample" class="ghost">Load a sample file</button>
+            </div>
+            <div class="io">
+              <div class="col">
+                <div class="col-head"><span>Paste your file</span></div>
+                <textarea id="input" spellcheck="false" placeholder="Drop in a .cursorrules, CLAUDE.md, or copilot-instructions.md…"></textarea>
+              </div>
+              <div class="col">
+                <div class="col-head"><span class="fname" id="outLabel">AGENTS.md</span><button id="copy" class="ghost sm">Copy</button></div>
+                <pre id="output" class="output"></pre>
+              </div>
+            </div>
+            <div id="warnings" class="warnings"></div>
+          </div>
+
+          <!-- Generate -->
+          <div class="panel hidden" data-panel="generate">
+            <div class="io">
+              <div class="col">
+                <div class="col-head"><span>Tell it about your project</span></div>
+                <div class="gen-grid">
+                  <label>Project name<input id="g_name" placeholder="my-app" /></label>
+                  <label>Language<input id="g_language" placeholder="TypeScript" /></label>
+                  <label>Framework<input id="g_framework" placeholder="Next.js" /></label>
+                  <label>Package manager<input id="g_pm" placeholder="pnpm" /></label>
+                  <label>Install<input id="g_install" placeholder="pnpm install" /></label>
+                  <label>Dev<input id="g_dev" placeholder="pnpm dev" /></label>
+                  <label>Build<input id="g_build" placeholder="pnpm build" /></label>
+                  <label>Test<input id="g_test" placeholder="pnpm test" /></label>
+                  <label>Lint<input id="g_lint" placeholder="pnpm lint" /></label>
+                  <label class="full">Short description<textarea id="g_description" rows="2" placeholder="A sentence or two about what this repo is."></textarea></label>
+                </div>
+              </div>
+              <div class="col">
+                <div class="col-head"><span class="fname">AGENTS.md</span><button id="copyGen" class="ghost sm">Copy</button></div>
+                <pre id="genOutput" class="output"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="how">
+      <div class="wrap">
+        <div class="section-head"><h2>How it works</h2></div>
+        <div class="steps">
+          <div class="step">
+            <span class="n">1</span>
+            <h3>Parse</h3>
+            <p>Whatever you paste gets read into one neutral shape: intro, sections, file globs.</p>
+          </div>
+          <div class="step">
+            <span class="n">2</span>
+            <h3>Keep what matters</h3>
+            <p>Things that don't map cleanly, like Cursor globs or Claude <code>@imports</code>, show up as warnings instead of vanishing.</p>
+          </div>
+          <div class="step">
+            <span class="n">3</span>
+            <h3>Render</h3>
+            <p>That shape is written back out in the format you asked for. One parser plus one renderer per tool.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <span>The same <code>src/core/agentsync.js</code> runs here and in the CLI.</span>
+      <span>MIT licensed.</span>
+    </div>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

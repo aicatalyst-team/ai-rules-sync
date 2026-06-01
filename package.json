@@ -1,0 +1,18 @@
+{
+  "name": "agentsync",
+  "version": "0.1.0",
+  "description": "One source of truth for your AI coding-agent rules — convert between AGENTS.md, CLAUDE.md, .cursorrules and Copilot instructions, or generate a clean AGENTS.md.",
+  "type": "module",
+  "bin": {
+    "agentsync": "bin/agentsync.mjs"
+  },
+  "scripts": {
+    "web": "node serve.mjs",
+    "cli": "node bin/agentsync.mjs",
+    "test": "node test/run.mjs"
+  },
+  "files": ["src", "bin"],
+  "keywords": ["agents.md", "codex", "claude", "cursor", "copilot", "ai", "coding-agent", "llm"],
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}
