@@ -1,0 +1,19 @@
+FROM registry.access.redhat.com/ubi9/nodejs-22
+
+WORKDIR /opt/app-root/src
+
+COPY package*.json ./
+
+# Zero dependencies - no npm install needed
+COPY . .
+
+# Set port to 8080 (non-privileged)
+ENV PORT=8080
+
+RUN chgrp -R 0 /opt/app-root && chmod -R g=u /opt/app-root
+
+EXPOSE 8080
+
+USER 1001
+
+CMD ["node", "serve.mjs"]
