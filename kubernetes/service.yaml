@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-rules-sync
+  namespace: poc-ai-rules-sync
+  labels:
+    app: ai-rules-sync
+    autopoc.io/project: ai-rules-sync
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-rules-sync
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http

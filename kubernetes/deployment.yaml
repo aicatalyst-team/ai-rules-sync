@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-rules-sync
+  namespace: poc-ai-rules-sync
+  labels:
+    app: ai-rules-sync
+    autopoc.io/project: ai-rules-sync
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-rules-sync
+  template:
+    metadata:
+      labels:
+        app: ai-rules-sync
+    spec:
+      containers:
+        - name: ai-rules-sync
+          image: quay.io/aicatalyst/ai-rules-sync:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /web/index.html
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /web/index.html
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
