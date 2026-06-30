@@ -10,6 +10,7 @@ COPY . .
 # Set port to 8080 (non-privileged)
 ENV PORT=8080
 
+USER 0
 RUN chgrp -R 0 /opt/app-root/src && chmod -R g=u /opt/app-root/src
 
 EXPOSE 8080
