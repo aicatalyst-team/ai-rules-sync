@@ -1,4 +1,10 @@
-# agentsync
+> [!WARNING]
+> **This repository is archived.**
+>
+> Archived on 2026-09-08 by the AI Catalyst Platform Team.
+> It is read-only and no longer maintained.
+
+---# agentsync
 
 [![npm version](https://img.shields.io/npm/v/@panishandsome/agentsync)](https://www.npmjs.com/package/@panishandsome/agentsync)
 [![npm downloads](https://img.shields.io/npm/dm/@panishandsome/agentsync)](https://www.npmjs.com/package/@panishandsome/agentsync)
